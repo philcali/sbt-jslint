@@ -10,7 +10,7 @@ import com.googlecode.jslint4java.{
 import JSLintOption._
 
 import com.googlecode.jslint4java.formatter.{
-  JSLintResultFormatter,
+  JSLintResultFormatter => ResultFormatter,
   PlainFormatter
 }
 
@@ -19,8 +19,22 @@ import collection.JavaConversions._
 import sbt._
 import Keys._
 
-object SbtJSLint extends Plugin {
+import complete.DefaultParsers._
+
+object Plugin extends sbt.Plugin {
   import LintKeys._
+
+  object ShortFormatter extends ResultFormatter {
+    def header = null
+    def footer = null
+
+    def format(result: JSLintResult) = {
+      val count = result.getIssues.size
+      val word = if (count == 1) "issue" else "issues"
+
+      "Found %d %s." format (result.getIssues.size, word)
+    }
+  }
 
   object LintKeys {
     lazy val indent = SettingKey[Int](
@@ -42,11 +56,13 @@ object SbtJSLint extends Plugin {
       "jslint-initialize", "Readies a jslint processor"
     )
 
-    lazy val formatter = TaskKey[JSLintResultFormatter](
+    lazy val formatter = TaskKey[ResultFormatter](
       "jslint-formatter", "Formats the lint results"
     )
 
     lazy val jslint = TaskKey[Unit]("jslint")
+
+    lazy val jslintInput = InputKey[Unit]("jslint-with", "Run jslint with input flags")
   }
 
   def jslintInitialize =
@@ -59,43 +75,63 @@ object SbtJSLint extends Plugin {
         jsl.addOption(MAXERR, m.toString)
         l.map(l => jsl.addOption(MAXLEN, l.toString))
 
-        f.map(_.toUpperCase).map(tryOption).foreach(_.map(jsl.addOption))
+        f.map(tryOption).foreach(_.map(jsl.addOption))
 
         jsl
     }
 
   def tryOption(opt: String) = 
-    try { Some(JSLintOption.valueOf(opt)) } catch { case _ => None }
+    try { Some(JSLintOption.valueOf(opt.toUpperCase)) } catch { case _ => None }
+
+  def validOptions(opt: JSLintOption) = opt.getDescription.startsWith("If")
 
   def jslintTask =
-    (streams, unmanagedSources in jslint, initialize in jslint, formatter in jslint) map {
-      (s, sources, processor, formatter) =>
+    (streams,
+     unmanagedSources in jslint,
+     initialize in jslint,
+     formatter in jslint) map (performLint)
 
-      sources.foreach { script =>
-        val result = processor.lint(script.name, new java.io.FileReader(script))
+  def performLint(s: TaskStreams, d: Seq[File], p: JSLint, f: ResultFormatter) {
+    d.foreach { script =>
+      val result = p.lint(script.name, new java.io.FileReader(script))
 
-        if (result.getIssues.isEmpty) {
-          s.log.info("No issues found in %s" format script.name)
-        } else {
-          s.log.warn(formatter.format(result))
-        }
+      if (result.getIssues.isEmpty) {
+        s.log.success("No issues found in %s" format script.name)
+      } else {
+        s.log.warn(f.format(result))
       }
     }
+  }
 
   def jslintListTask = (streams) map { s =>
     val nl = System.getProperty("line.separator")
     val format = (opt: JSLintOption) =>
       " %#10s \t%s".format(opt.getLowerName, opt.getDescription)
 
-    val valid = (opt: JSLintOption) => opt.getDescription.startsWith("If")
-
-    JSLintOption.values.filter(valid).map(format).foreach(println)
+    JSLintOption.values.filter(validOptions).map(format).foreach(println)
   }
 
   def jslintSources =
     (sourceDirectory in jslint, includeFilter in jslint, excludeFilter in jslint) map {
       (dir, include, exclude) => dir.descendentsExcept(include, exclude).get
     }
+
+  val flagParser = (state: State) => {
+    val keys = JSLintOption.values.filter(validOptions).map(_.getLowerName)
+
+    Space ~> keys.map(key => token(key)).reduceLeft(_ | _) +
+  }
+
+  val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
+    (parsed, streams, unmanagedSources in jslint,
+     initialize in jslint, formatter in jslint) map {
+      (opts, s, sources, lint, formatter) =>
+
+        opts.map(tryOption).foreach(_.map(lint.addOption))
+
+        performLint(s, sources, lint, formatter)
+    }
+  }
 
   def lintSettingsFor(con: Configuration): Seq[Setting[_]] =
     inConfig(con)(lintSettings0 ++ Seq(
@@ -115,6 +151,7 @@ object SbtJSLint extends Plugin {
     formatter in jslint := (new PlainFormatter),
     initialize <<= jslintInitialize,
     listFlags <<= jslintListTask,
-    jslint <<= jslintTask
+    jslint <<= jslintTask,
+    jslintInput <<= InputTask(flagParser)(jslintInputTask)
   )
 }
