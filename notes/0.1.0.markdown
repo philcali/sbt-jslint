@@ -1,0 +1,10 @@
+Initial release of the sbt-jslint plugin for sbt version 0.11.2.
+
+- Customize issue output
+- Pre-define jslint options
+- Inclusion and exclusion filters
+- Per-run lint options with user input
+
+The plugin's [README][readme] contains more info about the configuration details.
+
+[readme]: https://github.com/philcali/sbt-jslint#readme
