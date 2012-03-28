@@ -36,7 +36,7 @@ Because there are so many lint flags, simply add the lint flag keys to
 `lint-flags` or:
 
 ```
-LintKeys.lintFlags in LintKeys.jslint ++= Seq("browser", "on", "anon")
+LintKeys.flags in (Compile, LintKeys.jslint) ++= Seq("browser", "on", "anon")
 ```
 
 Use `jslint-list-flags` to print out a list of available flags to be included:
@@ -96,8 +96,11 @@ If you want jslint to be run with test, yet pulled for `Compile` resources.
 Something like that would look like this:
 
 ```
-val settings: Seq[Setting[_]] = lintSettingsFor(Compile) ++ Seq(
-  compile in Test <<= (compile in Test).dependsOn(LintKeys.jslint)
+import sbtjslint.Plugin.LintKeys._
+
+val settings: Seq[Setting[_]] = lintSettings ++ lintSettingsFor(Test) ++ Seq(
+  unmanagedSources in jslint <<= unmanagedSources in (Compile, jslint),
+  compile in Test <<= (compile in Test).dependsOn(jslint)
 )
 ```
 
@@ -110,7 +113,7 @@ By default, the plugin uses the `PlainFormatter` provided with the library, but
 this is configurable. The plugin has an additional formatter called
 `ShortFormatter`, that simply displays the issue count rather than the details.
 
-`LintKeys.lintFormatter in LintKeys.jslint := ShortFormatter`
+`LintKeys.formatter in (Compile, LintKeys.jslint) := ShortFormatter`
 
 This _setting_ is actually an sbt task, which gives a custom formatter
 access to the `TaskStreams` and the current `State` among other useful

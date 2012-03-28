@@ -1,4 +1,4 @@
-package com.github.philcali
+package sbtjslint
 
 import com.googlecode.jslint4java.{
   JSLint,
