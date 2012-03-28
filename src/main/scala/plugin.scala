@@ -139,7 +139,8 @@ object Plugin extends sbt.Plugin {
 
   def lintSettingsFor(con: Configuration): Seq[Setting[_]] =
     inConfig(con)(lintSettings0 ++ Seq(
-      sourceDirectory in jslint <<= (sourceDirectory in con)(_ / "js")
+      sourceDirectory in jslint <<= (sourceDirectory in con)(_ / "js"),
+      watchSources in jslint <<= (unmanagedSources in jslint)
     ))
 
   def lintSettings = lintSettingsFor(Compile)
@@ -148,7 +149,7 @@ object Plugin extends sbt.Plugin {
     indent in jslint := 4,
     maxErrors in jslint := 50,
     maxLength in jslint := None,
-    flags in jslint := Nil,
+    flags in jslint := Seq("sloppy"),
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,
     unmanagedSources in jslint <<= jslintSources,

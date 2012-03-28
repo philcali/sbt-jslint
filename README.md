@@ -21,6 +21,7 @@ jslint-max-length(for jslint) # Column width for javascript file
 jslint-flags(for jslint) # All the other flags for jslint
 jslint-initialize(for jslint) # Builds the JSLint processor
 jslint-formatter(for jslint) # Format the results in sbt
+unmanaged-sources(for jslint) # Js files to run jslint on
 include-filter(for jslint) # Run jslint on these files
 exclude-filter(for jslint) # Exclude these files
 ```
@@ -28,11 +29,12 @@ exclude-filter(for jslint) # Exclude these files
 ## Notes
 
 This plugin makes no assumptions about default flags, other than the ones listed
-on [jslint][2]:
+as default on [jslint][2]:
 
 - `LintKeys.indent in LintKeys.jslint := 4`
 - `LintKeys.maxErrors in LintKeys.jslint := 50`
 - `LintKeys.maxLength in LintKeys.jslint := None`
+- `LintKeys.flags in LintKeys.jslint := Seq("sloppy")`
 
 Because there are so many lint flags, simply add the lint flag keys to
 `lint-flags` or:
