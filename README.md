@@ -21,6 +21,8 @@ jslint-max-length(for jslint) # Column width for javascript file
 jslint-flags(for jslint) # All the other flags for jslint
 jslint-initialize(for jslint) # Builds the JSLint processor
 jslint-formatter(for jslint) # Format the results in sbt
+include-filter(for jslint) # Run jslint on these files
+exclude-filter(for jslint) # Exclude these files
 ```
 
 ## Notes
