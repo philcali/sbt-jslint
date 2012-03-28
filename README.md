@@ -15,12 +15,12 @@ __Note__: will only be published for sbt version >= 0.11.2.
 jslint # Runs jslint with the options specified in jslint-flags
 jslint-list-flags # Lists all the available flags
 jslint-with <flag-1> <flag-n> # Runs JSlint on inputed flags
-indent(for jslint) # Spaces
-max-errors(for jslint) # Issue threshold
-max-length(for jslint) # Column width for javascript file
-lint-flags(for jslint) # All the other flags for jslint
-initialize(for jslint) # Builds the JSLint processor
-lint-formatter(for jslint) # Format the results in sbt
+jslint-indent(for jslint) # Spaces
+jslint-max-errors(for jslint) # Issue threshold
+jslint-max-length(for jslint) # Column width for javascript file
+jslint-flags(for jslint) # All the other flags for jslint
+jslint-initialize(for jslint) # Builds the JSLint processor
+jslint-formatter(for jslint) # Format the results in sbt
 ```
 
 ## Notes
@@ -83,7 +83,7 @@ adding `undef` for files that depend on jquery. This plugin supports this
 work flow, with `jslint-with <flag>`.
 
 The `jslint-with` input task auto-completes the available flag with tab.
-Running jslint in this manner, will load your predefined flags in `lint-flags`,
+Running jslint in this manner, will load your predefined flags in `jslint-flags`,
 and your newly defined flags.
 
 ## Mixing Settings
@@ -112,9 +112,13 @@ this is configurable. The plugin has an additional formatter called
 
 `LintKeys.lintFormatter in LintKeys.jslint := ShortFormatter`
 
-This _setting_ is actually an sbt task, which would give a custom formatter
+This _setting_ is actually an sbt task, which gives a custom formatter
 access to the `TaskStreams` and the current `State` among other useful
 reporting information.
+
+## License
+
+MIT
 
 [1]: https://github.com/happygiraffe/jslint4java
 [2]: http://jslint.com/

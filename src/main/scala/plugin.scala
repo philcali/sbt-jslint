@@ -38,23 +38,23 @@ object Plugin extends sbt.Plugin {
 
   object LintKeys {
     lazy val indent = SettingKey[Int](
-      "indent", INDENT.getDescription)
+      "jslint-indent", INDENT.getDescription)
 
     lazy val maxErrors = SettingKey[Int](
-      "max-errors", MAXERR.getDescription)
+      "jslint-max-errors", MAXERR.getDescription)
 
     lazy val maxLength = SettingKey[Option[Int]](
-      "max-length", MAXLEN.getDescription)
+      "jslint-max-length", MAXLEN.getDescription)
 
-    lazy val lintFlags = SettingKey[Seq[String]](
-      "lint-flags", "Sequence of optional flags for runtime")
+    lazy val flags = SettingKey[Seq[String]](
+      "jslint-flags", "Sequence of optional flags for runtime")
 
     lazy val initialize = TaskKey[JSLint](
-      "initialize", "Readies a jslint processor"
+      "jslint-initialize", "Readies a jslint processor"
     )
 
-    lazy val lintFormatter = TaskKey[ResultFormatter](
-      "lint-formatter", "Formats the lint results"
+    lazy val formatter = TaskKey[ResultFormatter](
+      "jslint-formatter", "Formats the lint results"
     )
 
     lazy val jslint = TaskKey[Unit]("jslint")
@@ -70,7 +70,7 @@ object Plugin extends sbt.Plugin {
 
   def jslintInitialize =
     (indent in jslint, maxErrors in jslint,
-     maxLength in jslint, lintFlags in jslint) map {
+     maxLength in jslint, flags in jslint) map {
       (i, m, l, f) =>
         val builder = new JSLintBuilder()
         val jsl = builder.fromDefault()
@@ -93,7 +93,7 @@ object Plugin extends sbt.Plugin {
     (streams,
      unmanagedSources in jslint,
      initialize in jslint,
-     lintFormatter in jslint) map (performLint)
+     formatter in jslint) map (performLint)
 
   def performLint(s: TaskStreams, d: Seq[File], p: JSLint, f: ResultFormatter) {
     d.foreach { script =>
@@ -128,7 +128,7 @@ object Plugin extends sbt.Plugin {
 
   val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
     (parsed, streams, unmanagedSources in jslint,
-     initialize in jslint, lintFormatter in jslint) map {
+     initialize in jslint, formatter in jslint) map {
       (opts, s, sources, lint, formatter) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
@@ -148,11 +148,11 @@ object Plugin extends sbt.Plugin {
     indent in jslint := 4,
     maxErrors in jslint := 50,
     maxLength in jslint := None,
-    lintFlags in jslint := Nil,
+    flags in jslint := Nil,
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,
     unmanagedSources in jslint <<= jslintSources,
-    lintFormatter in jslint := (new PlainFormatter),
+    formatter in jslint := (new PlainFormatter),
     initialize <<= jslintInitialize,
     listFlags <<= jslintListTask,
     jslint <<= jslintTask,
