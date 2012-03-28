@@ -7,9 +7,15 @@ You can format the jslint issues anyway you want.
 
 __Note__: will only be published for sbt version >= 0.11.2.
 
+In your `project/plugins.sbt`, simply add the following line:
+
+`addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.0")`
+
+Then, include in your build:
+
 `seq(lintSettings: _*)`
 
-## Settings
+## sbt Settings and Tasks
 
 ```
 jslint # Runs jslint with the options specified in jslint-flags
@@ -26,7 +32,7 @@ include-filter(for jslint) # Run jslint on these files
 exclude-filter(for jslint) # Exclude these files
 ```
 
-## Notes
+## Some Notes
 
 This plugin makes no assumptions about default flags, other than the ones listed
 as default on [jslint][2]:
