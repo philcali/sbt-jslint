@@ -84,7 +84,7 @@ object Plugin extends sbt.Plugin {
         jsl
     }
 
-  def tryOption(opt: String) = 
+  def tryOption(opt: String) =
     try { Some(JSLintOption.valueOf(opt.toUpperCase)) } catch { case _ => None }
 
   def validOptions(opt: JSLintOption) = opt.getDescription.startsWith("If")
