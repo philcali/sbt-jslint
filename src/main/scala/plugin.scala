@@ -32,7 +32,7 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      "Found %d %s." format (result.getIssues.size, word)
+      "%d %s found." format (result.getIssues.size, word)
     }
   }
 
@@ -96,15 +96,36 @@ object Plugin extends sbt.Plugin {
      initialize in jslint,
      formatter in jslint) map (performLint)
 
+  def gitLike(path: String, len: Int): String = {
+    if (path.length < len) {
+      path.padTo((len + 3), " ").mkString
+    } else {
+      "..." + path
+        .takeRight(len)
+        .dropWhile {
+          x => x != '/'
+        }
+        .padTo(len, " ").mkString
+    }
+  }
+
   def performLint(s: TaskStreams, sourceDir: File, d: Seq[File], p: JSLint, f: ResultFormatter) {
+    val trimTo = 40;
     s.log.info("Performing jslint in %s..." format (sourceDir.toString()))
     d.foreach { script =>
       val result = p.lint(script.name, new java.io.FileReader(script))
 
       if (result.getIssues.isEmpty) {
-        s.log.success("No issues found in %s" format script.name)
+        s.log.success("%s | No issues found." format gitLike(script.toString(), (trimTo - 3)))
       } else {
-        s.log.warn(f.format(result))
+        f match {
+          case ShortFormatter => {
+            s.log.warn("%s | %s" format (gitLike(script.toString(), trimTo), f.format(result)))
+          }
+          case _ => {
+            s.log.warn(f.format(result))
+          }
+        }
       }
     }
   }
