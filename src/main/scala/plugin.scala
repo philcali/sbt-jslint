@@ -91,11 +91,13 @@ object Plugin extends sbt.Plugin {
 
   def jslintTask =
     (streams,
+     sourceDirectory in jslint,
      unmanagedSources in jslint,
      initialize in jslint,
      formatter in jslint) map (performLint)
 
-  def performLint(s: TaskStreams, d: Seq[File], p: JSLint, f: ResultFormatter) {
+  def performLint(s: TaskStreams, sourceDir: File, d: Seq[File], p: JSLint, f: ResultFormatter) {
+    s.log.info("Performing jslint in %s..." format (sourceDir.toString()))
     d.foreach { script =>
       val result = p.lint(script.name, new java.io.FileReader(script))
 
@@ -127,13 +129,13 @@ object Plugin extends sbt.Plugin {
   }
 
   val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
-    (parsed, streams, unmanagedSources in jslint,
+    (parsed, streams, sourceDirectory in jslint, unmanagedSources in jslint,
      initialize in jslint, formatter in jslint) map {
-      (opts, s, sources, lint, formatter) =>
+      (opts, s, dir, sources, lint, formatter) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
 
-        performLint(s, sources, lint, formatter)
+        performLint(s, dir, sources, lint, formatter)
     }
   }
 
