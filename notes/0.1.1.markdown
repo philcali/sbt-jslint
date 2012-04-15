@@ -1,0 +1,4 @@
+- Reporting improvements [#1][1] ([jzsfkzm][2]
+
+[1]: https://github.com/philcali/sbt-jslint/pull/1
+[2]: https://github.com/jzsfkzm

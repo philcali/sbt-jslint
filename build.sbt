@@ -4,7 +4,7 @@ name := "sbt-jslint"
 
 organization := "com.github.philcali"
 
-version := "0.1.0"
+version := "0.1.1"
 
 libraryDependencies += "com.googlecode.jslint4java" % "jslint4java" % "2.0.2"
 
