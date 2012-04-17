@@ -11,7 +11,8 @@ import JSLintOption._
 
 import com.googlecode.jslint4java.formatter.{
   JSLintResultFormatter => ResultFormatter,
-  PlainFormatter
+  PlainFormatter,
+  JSLintXmlFormatter
 }
 
 import collection.JavaConversions._
@@ -24,6 +25,9 @@ import complete.DefaultParsers._
 object Plugin extends sbt.Plugin {
   import LintKeys._
 
+  type JSLintResults = Seq[JSLintResult]
+  type JSLintOutput = (JSLintResults => Unit)
+
   object ShortFormatter extends ResultFormatter {
     def header = null
     def footer = null
@@ -32,7 +36,8 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      "./%-25s | %d %s found." format (result.getName, result.getIssues.size, word)
+      val padded = result.getName.takeRight(40).mkString
+      "%-40s | %d %s found." format (padded, result.getIssues.size, word)
     }
   }
 
@@ -49,12 +54,24 @@ object Plugin extends sbt.Plugin {
     lazy val flags = SettingKey[Seq[String]](
       "jslint-flags", "Sequence of optional flags for runtime")
 
+    lazy val formatter = SettingKey[ResultFormatter](
+      "jslint-formatter", "Formats the lint results"
+    )
+
+    lazy val outputs = TaskKey[Seq[JSLintOutput]](
+      "jslint-outputs", "List of ouputs to be used"
+    )
+
     lazy val initialize = TaskKey[JSLint](
       "jslint-initialize", "Readies a jslint processor"
     )
 
-    lazy val formatter = TaskKey[ResultFormatter](
-      "jslint-formatter", "Formats the lint results"
+    lazy val jslintConsoleOutput = TaskKey[JSLintOutput](
+      "jslint-console-output", "Outputs lint results in console"
+    )
+
+    lazy val jslintFileOutput = TaskKey[JSLintOutput](
+      "jslint-file-output", "Outputs lint results to target(for jslint-file-output)"
     )
 
     lazy val jslint = TaskKey[Unit]("jslint")
@@ -66,6 +83,12 @@ object Plugin extends sbt.Plugin {
     lazy val jslintInput = InputKey[Unit](
       "jslint-with", "Run jslint with input flags"
     )
+  }
+
+  def jslintFormat(fun: JSLintResult => String) = new ResultFormatter {
+    def header = null
+    def footer = null
+    def format(result: JSLintResult) = fun(result)
   }
 
   private def jslintInitialize =
@@ -94,23 +117,47 @@ object Plugin extends sbt.Plugin {
      sourceDirectory in jslint,
      unmanagedSources in jslint,
      initialize in jslint,
-     formatter in jslint) map (performLint)
+     outputs in jslint) map (performLint)
 
-  private def performLint(s: TaskStreams, sourceDir: File, d: Seq[File], p: JSLint, f: ResultFormatter) {
-    s.log.info("Performing jslint in %s..." format (sourceDir.toString()))
-    d.foreach { script =>
-      val result = p.lint(script.name, new java.io.FileReader(script))
-
-      if (result.getIssues.isEmpty) {
-        s.log.success("./%-22s | No issues found." format result.getName)
-      } else {
-        s.log.warn(f.format(result))
+  private def jslintConsoleOutputTask =
+    (streams, formatter in jslintConsoleOutput) map {
+      (s, f) => (results: JSLintResults) => {
+        results.foreach { result =>
+          if (result.getIssues.isEmpty) {
+            val shortened = result.getName.takeRight(37).mkString
+            s.log.success("%-37s | No issues found." format shortened)
+          } else {
+            s.log.warn(f.format(result))
+          }
+        }
       }
     }
+
+  private def jslintFileOutputTask =
+    (streams, target in jslintFileOutput, formatter in jslintFileOutput) map {
+      (s, t, f) => (results: JSLintResults) => {
+        val nl = System.getProperty("line.separator")
+
+        val header = if (f.header == null) "" else f.header + nl
+        val footer = if (f.footer == null) "" else nl + f.footer
+        val formatted = results.filter(!_.getIssues.isEmpty).map(f.format).mkString(nl)
+
+        IO.write(t, header + formatted + footer)
+
+        s.log.info("Output results to %s" format t.toString())
+      }
+    }
+
+  private def performLint(s: TaskStreams, d: File, fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
+    s.log.info("Performing jslint in %s..." format d.toString())
+    val results = fs.map { f =>
+      val shortened = f.toString.replace(d.toString, "")
+      p.lint(shortened, new java.io.FileReader(f))
+    }
+    outs.foreach(_.apply(results))
   }
 
   private def jslintListTask = (streams) map { s =>
-    val nl = System.getProperty("line.separator")
     val format = (opt: JSLintOption) =>
       " %#10s \t%s".format(opt.getLowerName, opt.getDescription)
 
@@ -130,19 +177,21 @@ object Plugin extends sbt.Plugin {
 
   private val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
     (parsed, streams, sourceDirectory in jslint, unmanagedSources in jslint,
-     initialize in jslint, formatter in jslint) map {
-      (opts, s, dir, sources, lint, formatter) =>
+     initialize in jslint, outputs in jslint) map {
+      (opts, s, dir, sources, lint, outs) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
 
-        performLint(s, dir, sources, lint, formatter)
+        performLint(s, dir, sources, lint, outs)
     }
   }
 
   def lintSettingsFor(con: Configuration): Seq[Setting[_]] =
     inConfig(con)(lintSettings0 ++ Seq(
       sourceDirectory in jslint <<= (sourceDirectory in con)(_ / "js"),
-      watchSources in jslint <<= (unmanagedSources in jslint)
+      watchSources in jslint <<= (unmanagedSources in jslint),
+      // Outputs for configuration
+      outputs in jslint <++= (jslintConsoleOutput, jslintFileOutput) map (Seq(_, _))
     ))
 
   def lintSettings = lintSettingsFor(Compile)
@@ -155,7 +204,17 @@ object Plugin extends sbt.Plugin {
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,
     unmanagedSources in jslint <<= jslintSources,
-    formatter in jslint := (new PlainFormatter),
+    // Setup console output
+    jslintConsoleOutput <<= jslintConsoleOutputTask,
+    formatter in jslintConsoleOutput := (new PlainFormatter),
+    // Setup File output
+    jslintFileOutput <<= jslintFileOutputTask,
+    formatter in jslintFileOutput := (new JSLintXmlFormatter),
+    target in jslintFileOutput <<= (target) (_ / "jslint" / "results.xml"),
+    cleanFiles <+= target in jslintFileOutput,
+    // No outputs for global
+    outputs in jslint := Nil,
+    // Lint tasks
     initialize <<= jslintInitialize,
     listFlags <<= jslintListTask,
     jslint <<= jslintTask,
