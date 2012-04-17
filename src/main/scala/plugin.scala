@@ -68,7 +68,7 @@ object Plugin extends sbt.Plugin {
     )
   }
 
-  def jslintInitialize =
+  private def jslintInitialize =
     (indent in jslint, maxErrors in jslint,
      maxLength in jslint, flags in jslint) map {
       (i, m, l, f) =>
@@ -84,19 +84,19 @@ object Plugin extends sbt.Plugin {
         jsl
     }
 
-  def tryOption(opt: String) =
+  private def tryOption(opt: String) =
     try { Some(JSLintOption.valueOf(opt.toUpperCase)) } catch { case _ => None }
 
-  def validOptions(opt: JSLintOption) = opt.getDescription.startsWith("If")
+  private def validOptions(opt: JSLintOption) = opt.getDescription.startsWith("If")
 
-  def jslintTask =
+  private def jslintTask =
     (streams,
      sourceDirectory in jslint,
      unmanagedSources in jslint,
      initialize in jslint,
      formatter in jslint) map (performLint)
 
-  def performLint(s: TaskStreams, sourceDir: File, d: Seq[File], p: JSLint, f: ResultFormatter) {
+  private def performLint(s: TaskStreams, sourceDir: File, d: Seq[File], p: JSLint, f: ResultFormatter) {
     s.log.info("Performing jslint in %s..." format (sourceDir.toString()))
     d.foreach { script =>
       val result = p.lint(script.name, new java.io.FileReader(script))
@@ -109,7 +109,7 @@ object Plugin extends sbt.Plugin {
     }
   }
 
-  def jslintListTask = (streams) map { s =>
+  private def jslintListTask = (streams) map { s =>
     val nl = System.getProperty("line.separator")
     val format = (opt: JSLintOption) =>
       " %#10s \t%s".format(opt.getLowerName, opt.getDescription)
@@ -117,18 +117,18 @@ object Plugin extends sbt.Plugin {
     JSLintOption.values.filter(validOptions).map(format).foreach(println)
   }
 
-  def jslintSources =
+  private def jslintSources =
     (sourceDirectory in jslint, includeFilter in jslint, excludeFilter in jslint) map {
       (dir, include, exclude) => dir.descendentsExcept(include, exclude).get
     }
 
-  val flagParser = (state: State) => {
+  private val flagParser = (state: State) => {
     val keys = JSLintOption.values.filter(validOptions).map(_.getLowerName)
 
     Space ~> keys.map(key => token(key)).reduceLeft(_ | _) +
   }
 
-  val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
+  private val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
     (parsed, streams, sourceDirectory in jslint, unmanagedSources in jslint,
      initialize in jslint, formatter in jslint) map {
       (opts, s, dir, sources, lint, formatter) =>
