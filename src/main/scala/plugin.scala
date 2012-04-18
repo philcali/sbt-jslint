@@ -167,11 +167,8 @@ object Plugin extends sbt.Plugin {
       f => p.lint(f.toString.replace(d.toString, "."), new java.io.FileReader(f))
     }
     if (e) {
-      rs.foreach { result =>
-        val first = result.getIssues.headOption
-        if (first.isDefined) {
-          throw new RuntimeException(first.get.toString)
-        }
+      rs.foreach { res =>
+        res.getIssues.headOption.map(r => throw new RuntimeException(r.toString))
       }
     }
     outs.foreach(_.apply(rs))
