@@ -61,6 +61,10 @@ object Plugin extends sbt.Plugin {
       "jslint-formatter", "Formats the lint results"
     )
 
+    lazy val explode = SettingKey[Boolean](
+      "jslint-explode", "Finding the first issue throw a build exception"
+    )
+
     lazy val outputs = TaskKey[Seq[JSLintOutput]](
       "jslint-outputs", "List of ouputs to be used"
     )
@@ -117,6 +121,7 @@ object Plugin extends sbt.Plugin {
 
   private def jslintTask =
     (streams,
+     explode in jslint,
      sourceDirectory in jslint,
      unmanagedSources in jslint,
      initialize in jslint,
@@ -154,10 +159,20 @@ object Plugin extends sbt.Plugin {
       }
     }
 
-  private def performLint(s: TaskStreams, d: File, fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
+  private def performLint(
+    s: TaskStreams, e: Boolean, d: File,
+    fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
     s.log.info("Performing jslint in %s..." format d.toString())
     val rs = fs.map {
       f => p.lint(f.toString.replace(d.toString, "."), new java.io.FileReader(f))
+    }
+    if (e) {
+      rs.foreach { result =>
+        val first = result.getIssues.headOption
+        if (first.isDefined) {
+          throw new RuntimeException(first.get.toString)
+        }
+      }
     }
     outs.foreach(_.apply(rs))
   }
@@ -181,14 +196,14 @@ object Plugin extends sbt.Plugin {
   }
 
   private val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
-    (parsed, streams, sourceDirectory in jslint,
+    (parsed, streams, explode in jslint, sourceDirectory in jslint,
      unmanagedSources in jslint, initialize in jslint,
      outputs in jslint) map {
-      (opts, s, dir, sources, lint, outs) =>
+      (opts, s, e, dir, sources, lint, outs) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
 
-        performLint(s, dir, sources, lint, outs)
+        performLint(s, e, dir, sources, lint, outs)
     }
   }
 
@@ -207,6 +222,7 @@ object Plugin extends sbt.Plugin {
     maxErrors in jslint := 50,
     maxLength in jslint := None,
     flags in jslint := Nil,
+    explode in jslint := false,
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,
     unmanagedSources in jslint <<= jslintSources,
