@@ -11,7 +11,7 @@ __Note__: will only be published for sbt version >= 0.11.2.
 
 In your `project/plugins.sbt`, simply add the following line:
 
-`addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.0")`
+`addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.1")`
 
 Then, include in your build:
 
@@ -23,12 +23,17 @@ Then, include in your build:
 jslint # Runs jslint with the options specified in jslint-flags
 jslint-list-flags # Lists all the available flags
 jslint-with <flag-1> <flag-n> # Runs JSlint on inputed flags
+jslint-outputs(for jslint) # Output sequence for lint results
+jslint-console-output # Outputs jslint results to console
+jslint-file-output # Outputs jslint results to a file
 jslint-indent(for jslint) # Spaces
 jslint-max-errors(for jslint) # Issue threshold
 jslint-max-length(for jslint) # Column width for javascript file
 jslint-flags(for jslint) # All the other flags for jslint
 jslint-initialize(for jslint) # Builds the JSLint processor
-jslint-formatter(for jslint) # Format the results in sbt
+jslint-formatter(for jslint-console-output) # Format the results in sbt
+jslint-formatter(for jslint-file-output) # Format the results to a file
+target(for jslint-file-output) # Output file
 unmanaged-sources(for jslint) # Js files to run jslint on
 include-filter(for jslint) # Run jslint on these files
 exclude-filter(for jslint) # Exclude these files
@@ -42,7 +47,7 @@ as default on [jslint][2]:
 - `LintKeys.indent in LintKeys.jslint := 4`
 - `LintKeys.maxErrors in LintKeys.jslint := 50`
 - `LintKeys.maxLength in LintKeys.jslint := None`
-- `LintKeys.flags in LintKeys.jslint := Seq("sloppy")`
+- `LintKeys.flags in LintKeys.jslint := Nil`
 
 Because there are so many lint flags, simply add the lint flag keys to
 `lint-flags` or:
@@ -111,25 +116,70 @@ Something like that would look like this:
 import sbtjslint.Plugin.LintKeys._
 
 val settings: Seq[Setting[_]] = lintSettings ++ lintSettingsFor(Test) ++ Seq(
-  unmanagedSources in jslint <<= unmanagedSources in (Compile, jslint),
+  unmanagedSources in (Test, jslint) <<= unmanagedSources in (Compile, jslint),
   compile in Test <<= (compile in Test).dependsOn(jslint)
 )
 ```
 
+## Multiple Outputs
+
+The excellent [jslint4java][1] gives clients many ways to report the jslint
+results, and this plugin provides a simple way to add, change, or remove
+the predefined outputs. Currently, outputting the results to the console and
+to a file are defaults.
+
+If you wish to only output to the console:
+
+`LintKeys.outputs in (Compile, LintKeys.jslint) ~= (_.take(1))`
+
+If you wish to only output to a file:
+
+`LintKeys.outputs in (Compile, LintKeys.jslint) ~= (_.drop(1))`
+
+An `JSLintOutput` is simply a Scala function that takes a `JSLintResults` as
+it's input:
+
+```
+LintKeys.outputs in (Compile, LintKeys.jslint) <+= (streams) map { s =>
+  (results: JSLintResults) =>
+  results.foreach { result =>
+    s.log.info("%s took %d millis" format (result.getName, result.getDuration))
+  }
+}
+```
+
+If you want to overwrite the console output:
+
+```
+import LintKeys._
+
+jslintConsoleOutput in Compile <<= (streams, formatter in (Compile, jslint)) map {
+  (s, f) =>
+  (results: JSLintResults) =>
+  results.filter(!_.getIssues.isEmpty).map(f.format).map(s.log.warn)
+}
+```
+
 ## Custom Formatting
 
-Currently, jslint results are outputted to the shell as warnings, because
-errors in javascript are determined in runtime.
+Currently, jslint results are outputted to a sequence of defined outputs.
 
-By default, the plugin uses the `PlainFormatter` provided with the library, but
+By default, the console uses the `PlainFormatter` provided with the library, but
 this is configurable. The plugin has an additional formatter called
 `ShortFormatter`, that simply displays the issue count rather than the details.
 
-`LintKeys.formatter in (Compile, LintKeys.jslint) := ShortFormatter`
+`LintKeys.formatter in (Compile, LintKeys.jslintConsoleOutput) := ShortFormatter`
 
-This _setting_ is actually an sbt task, which gives a custom formatter
-access to the `TaskStreams` and the current `State` among other useful
-reporting information.
+The plugin provides a simple function to create a custom formatter from scratch,
+with the `jslintFormat` function.
+
+```
+LintKeys.formatter in (Compile, LintKeys.jslintConsoleOutput) := jslintFormat {
+  result =>
+  val ls = result.getIssues.map(i => "line %d: %s" format (i.getLine, i.getReason))
+  ls.mkString("\n")
+}
+```
 
 ## License
 
