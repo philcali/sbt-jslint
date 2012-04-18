@@ -1,5 +1,6 @@
 - Reporting improvements [#1][1] ([jzsfkzm][2]
 - Multi-outputs [#2][4] ([philcali][3] and [jzsfkzm][2])
+- Option to error on first issue [#3][5]
 
 ## Compatibility Changes
 
@@ -11,3 +12,4 @@ it is not a default
 [2]: https://github.com/jzsfkzm
 [3]: https://github.com/philcali
 [4]: https://github.com/philcali/sbt-jslint/issues/2
+[5]: https://github.com/philcali/sbt-jslint/issues/3

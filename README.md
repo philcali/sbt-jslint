@@ -23,6 +23,7 @@ Then, include in your build:
 jslint # Runs jslint with the options specified in jslint-flags
 jslint-list-flags # Lists all the available flags
 jslint-with <flag-1> <flag-n> # Runs JSlint on inputed flags
+jslint-explode # Throws a build error on first issue
 jslint-outputs(for jslint) # Output sequence for lint results
 jslint-console-output # Outputs jslint results to console
 jslint-file-output # Outputs jslint results to a file
@@ -48,6 +49,7 @@ as default on [jslint][2]:
 - `LintKeys.maxErrors in LintKeys.jslint := 50`
 - `LintKeys.maxLength in LintKeys.jslint := None`
 - `LintKeys.flags in LintKeys.jslint := Nil`
+- `LintKeys.explode in LintKeys.jslint := false`
 
 Because there are so many lint flags, simply add the lint flag keys to
 `lint-flags` or:
@@ -119,6 +121,16 @@ val settings: Seq[Setting[_]] = lintSettings ++ lintSettingsFor(Test) ++ Seq(
   unmanagedSources in (Test, jslint) <<= unmanagedSources in (Compile, jslint),
   compile in Test <<= (compile in Test).dependsOn(jslint)
 )
+```
+
+## Build errors
+
+The plugin has an setting to cause build errors if a javascript file does not
+conform to desired standards (integration testing). The setting is aptly named
+`explode` as it does just that, giving a line number, column number, and reason.
+
+```
+LintKeys.explode in (Compile, jslint) := true
 ```
 
 ## Multiple Outputs
