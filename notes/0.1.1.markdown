@@ -4,7 +4,8 @@
 ## Compatibility Changes
 
 - console formatter is now defined at `formatter in (Compile, jslintConsoleOutput)`
-- _sloppy_ flag has been removed from `LintKeys.flags` as a default, because it is not
+- _sloppy_ flag has been removed from `LintKeys.flags` as a default, because
+it is not a default
 
 [1]: https://github.com/philcali/sbt-jslint/pull/1
 [2]: https://github.com/jzsfkzm

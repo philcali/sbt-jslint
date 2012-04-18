@@ -136,7 +136,7 @@ If you wish to only output to a file:
 
 `LintKeys.outputs in (Compile, LintKeys.jslint) ~= (_.drop(1))`
 
-An `JSLintOutput` is simply a Scala function that takes a `JSLintResults` as
+A `JSLintOutput` is simply a Scala function that takes a `JSLintResults` as
 it's input:
 
 ```
@@ -153,7 +153,7 @@ If you want to overwrite the console output:
 ```
 import LintKeys._
 
-jslintConsoleOutput in Compile <<= (streams, formatter in (Compile, jslint)) map {
+jslintConsoleOutput in Compile <<= (streams, formatter in (Compile, jslintConsoleOutput)) map {
   (s, f) =>
   (results: JSLintResults) =>
   results.filter(!_.getIssues.isEmpty).map(f.format).map(s.log.warn)
