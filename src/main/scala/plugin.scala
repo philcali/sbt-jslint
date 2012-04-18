@@ -36,8 +36,11 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      val padded = result.getName.takeRight(40).mkString
-      "%-40s | %d %s found." format (padded, result.getIssues.size, word)
+      val padded = if (result.getName.length > 25) {
+        "..." + result.getName.takeRight(22).mkString
+      } else result.getName
+
+      "%-25s | %d %s found." format (padded, result.getIssues.size, word)
     }
   }
 
@@ -124,8 +127,11 @@ object Plugin extends sbt.Plugin {
       (s, f) => (results: JSLintResults) => {
         results.foreach { result =>
           if (result.getIssues.isEmpty) {
-            val shortened = result.getName.takeRight(37).mkString
-            s.log.success("%-37s | No issues found." format shortened)
+            val shortened = if (result.getName.length > 22) {
+              "..." + result.getName.takeRight(19).mkString
+            } else result.getName
+
+            s.log.success("%-22s | No issues found." format shortened)
           } else {
             s.log.warn(f.format(result))
           }
@@ -150,11 +156,10 @@ object Plugin extends sbt.Plugin {
 
   private def performLint(s: TaskStreams, d: File, fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
     s.log.info("Performing jslint in %s..." format d.toString())
-    val results = fs.map { f =>
-      val shortened = f.toString.replace(d.toString, "")
-      p.lint(shortened, new java.io.FileReader(f))
+    val rs = fs.map {
+      f => p.lint(f.toString.replace(d.toString, "."), new java.io.FileReader(f))
     }
-    outs.foreach(_.apply(results))
+    outs.foreach(_.apply(rs))
   }
 
   private def jslintListTask = (streams) map { s =>
@@ -176,8 +181,9 @@ object Plugin extends sbt.Plugin {
   }
 
   private val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
-    (parsed, streams, sourceDirectory in jslint, unmanagedSources in jslint,
-     initialize in jslint, outputs in jslint) map {
+    (parsed, streams, sourceDirectory in jslint,
+     unmanagedSources in jslint, initialize in jslint,
+     outputs in jslint) map {
       (opts, s, dir, sources, lint, outs) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
@@ -200,7 +206,7 @@ object Plugin extends sbt.Plugin {
     indent in jslint := 4,
     maxErrors in jslint := 50,
     maxLength in jslint := None,
-    flags in jslint := Seq("sloppy"),
+    flags in jslint := Nil,
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,
     unmanagedSources in jslint <<= jslintSources,
