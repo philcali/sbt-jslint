@@ -176,11 +176,22 @@ jslintConsoleOutput in Compile <<= (streams, formatter in (Compile, jslintConsol
 
 Currently, jslint results are outputted to a sequence of defined outputs.
 
-By default, the console uses the `PlainFormatter` provided with the library, but
-this is configurable. The plugin has an additional formatter called
-`ShortFormatter`, that simply displays the issue count rather than the details.
+By default, the console uses the `PlainFormatter` and the file output uses the
+`JSLintXmlFormatter` provided with the library, but these are configurable.
+The plugin has an additional formatter called `ShortFormatter`, that simply
+displays the issue count rather than the details.
+
+Changing the console formatter:
 
 `LintKeys.formatter in (Compile, LintKeys.jslintConsoleOutput) := ShortFormatter`
+
+Changing the file formatter to match the console one:
+
+```
+import LintKeys._
+
+formatter in (Compile, jslintFileOutput) <<= (formatter in (Compile, jslintConsoleOutput))
+```
 
 The plugin provides a simple function to create a custom formatter from scratch,
 with the `jslintFormat` function.
