@@ -1,5 +1,5 @@
 - Reporting improvements [#1][1] ([jzsfkzm][2]
-- Multi-outputs [#2][4] ([philcali][3] and [jzsfkzm][2])
+- Multiple-outputs [#2][4] ([philcali][3] and [jzsfkzm][2])
 - Option to error on first issue [#3][5]
 
 ## Compatibility Changes
