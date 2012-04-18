@@ -4,16 +4,21 @@ import LintKeys._
 
 seq(lintSettings: _*)
 
-formatter in (Compile, jslintConsoleOutput) := jslintFormat { result => 
-  result.getIssues.map{ issue =>
+flags in (Compile, jslint) += "sloppy"
+
+formatter in (Compile, jslintConsoleOutput) := ShortFormatter
+
+formatter in (Compile, jslint) := jslintFormat { result =>
+  result.getIssues.map { issue =>
     "line %d: %s" format (issue.getLine, issue.getReason)
   }.mkString("\n")
 }
 
-jslintConsoleOutput in Compile <<= (streams, formatter in (Compile, jslintConsoleOutput)) map {
+outputs in (Compile, jslint) <+= (streams, formatter in (Compile, jslint)) map {
   (s, f) =>
   (results: JSLintResults) => results.foreach { result =>
-    val phrase = "%s took %d millis" format(result.getName, result.getDuration)
+    val file = result.getName.split(System.getProperty("file.separator")).last
+    val phrase = "%s took %d millis" format(file, result.getDuration)
     val issues = result.getIssues
     if (!issues.isEmpty) {
       s.log.warn("%s. Issues below:" format phrase)
