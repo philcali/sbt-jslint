@@ -36,11 +36,11 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      val padded = if (result.getName.length > 25) {
-        "..." + result.getName.takeRight(22).mkString
+      val padded = if (result.getName.length > 35) {
+        "..." + result.getName.takeRight(32).mkString
       } else result.getName
 
-      "%-25s | %d %s found." format (padded, result.getIssues.size, word)
+      "%-35s | %d %s found." format (padded, result.getIssues.size, word)
     }
   }
 
@@ -132,11 +132,11 @@ object Plugin extends sbt.Plugin {
       (s, f) => (results: JSLintResults) => {
         results.foreach { result =>
           if (result.getIssues.isEmpty) {
-            val shortened = if (result.getName.length > 22) {
-              "..." + result.getName.takeRight(19).mkString
+            val shortened = if (result.getName.length > 32) {
+              "..." + result.getName.takeRight(29).mkString
             } else result.getName
 
-            s.log.success("%-22s | No issues found." format shortened)
+            s.log.success("%-32s | No issues found." format shortened)
           } else {
             s.log.warn(f.format(result))
           }
