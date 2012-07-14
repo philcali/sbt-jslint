@@ -36,9 +36,12 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      val padded = if (result.getName.length > 35) {
-        "..." + result.getName.takeRight(32).mkString
-      } else result.getName
+      val relPath = result.getName.replace((sourceDirectory in jslint).toString, ".")
+      val padded = if (relPath.length > 35) {
+        "..." + relPath.takeRight(32).mkString
+      } else {
+        relPath
+      }
 
       "%-35s | %d %s found." format (padded, result.getIssues.size, word)
     }
@@ -128,13 +131,16 @@ object Plugin extends sbt.Plugin {
      outputs in jslint) map (performLint)
 
   private def jslintConsoleOutputTask =
-    (streams, formatter in jslintConsoleOutput) map {
-      (s, f) => (results: JSLintResults) => {
+    (streams, formatter in jslintConsoleOutput, sourceDirectory in jslint) map {
+      (s, f, d) => (results: JSLintResults) => {
         results.foreach { result =>
           if (result.getIssues.isEmpty) {
-            val shortened = if (result.getName.length > 32) {
-              "..." + result.getName.takeRight(29).mkString
-            } else result.getName
+            val relPath = result.getName.replace(d.toString, ".")
+            val shortened = if (relPath.length > 32) {
+              "..." + relPath.takeRight(29).mkString
+            } else {
+              relPath
+            }
 
             s.log.success("%-32s | No issues found." format shortened)
           } else {
@@ -164,7 +170,7 @@ object Plugin extends sbt.Plugin {
     fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
     s.log.info("Performing jslint in %s..." format d.toString())
     val rs = fs.map {
-      f => p.lint(f.toString.replace(d.toString, "."), new java.io.FileReader(f))
+      f => p.lint(f.toString, new java.io.FileReader(f))
     }
     if (e) {
       rs.foreach { res =>
