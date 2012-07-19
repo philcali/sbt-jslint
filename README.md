@@ -61,7 +61,7 @@ LintKeys.flags in (Compile, LintKeys.jslint) ++= Seq("browser", "on", "anon")
 Use `jslint-list-flags` to print out a list of available flags to be included:
 
 ```
-> jslint-list-flags     
+> jslint-list-flags
        anon     If the space may be omitted in anonymous function declarations
     bitwise     If bitwise operators should be allowed
     browser     If the standard browser globals should be predefined
@@ -183,7 +183,14 @@ displays the issue count rather than the details.
 
 Changing the console formatter:
 
-`LintKeys.formatter in (Compile, LintKeys.jslintConsoleOutput) := ShortFormatter`
+``` scala
+import LintKeys.{
+  jslint, formatter,
+  jslintConsoleOutput => consoleOut
+}
+
+formatter in (Compile, consoleOut) <<= (sourceDirectory in jslint) (ShortFormatter)
+```
 
 Changing the file formatter to match the console one:
 

@@ -1,1 +1,1 @@
-addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.1")
+addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.2")

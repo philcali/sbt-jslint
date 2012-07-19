@@ -6,7 +6,8 @@ seq(lintSettings: _*)
 
 flags in (Compile, jslint) += "sloppy"
 
-formatter in (Compile, jslintConsoleOutput) := ShortFormatter
+formatter in (Compile, jslintConsoleOutput) <<=
+  (sourceDirectory in (Compile, jslint)) (ShortFormatter)
 
 formatter in (Compile, jslint) := jslintFormat { result =>
   result.getIssues.map { issue =>

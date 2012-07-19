@@ -28,7 +28,7 @@ object Plugin extends sbt.Plugin {
   type JSLintResults = Seq[JSLintResult]
   type JSLintOutput = (JSLintResults => Unit)
 
-  object ShortFormatter extends ResultFormatter {
+  case class ShortFormatter(source: File) extends ResultFormatter {
     def header = null
     def footer = null
 
@@ -36,7 +36,7 @@ object Plugin extends sbt.Plugin {
       val count = result.getIssues.size
       val word = if (count == 1) "issue" else "issues"
 
-      val relPath = result.getName.replace((sourceDirectory in jslint).toString, ".")
+      val relPath = result.getName.replace(source.toString(), ".")
       val padded = if (relPath.length > 35) {
         "..." + relPath.takeRight(32).mkString
       } else {
