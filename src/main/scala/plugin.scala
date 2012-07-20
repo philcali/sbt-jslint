@@ -1,5 +1,7 @@
 package sbtjslint
 
+import util.control.Exception.allCatch
+
 import com.googlecode.jslint4java.{
   JSLint,
   JSLintBuilder,
@@ -118,17 +120,14 @@ object Plugin extends sbt.Plugin {
     }
 
   private def tryOption(opt: String) =
-    try { Some(JSLintOption.valueOf(opt.toUpperCase)) } catch { case _ => None }
+    allCatch.opt(JSLintOption.valueOf(opt.toUpperCase))
 
   private def validOptions(opt: JSLintOption) = opt.getDescription.startsWith("If")
 
   private def jslintTask =
-    (streams,
-     explode in jslint,
-     sourceDirectory in jslint,
-     unmanagedSources in jslint,
-     initialize in jslint,
-     outputs in jslint) map (performLint)
+    (streams, explode in jslint, sourceDirectory in jslint,
+     unmanagedSources in jslint, initialize in jslint,
+     outputs in jslint, jslintFileOutput in jslint) map (performLint)
 
   private def jslintConsoleOutputTask =
     (streams, formatter in jslintConsoleOutput, sourceDirectory in jslint) map {
@@ -166,15 +165,26 @@ object Plugin extends sbt.Plugin {
     }
 
   private def performLint(
-    s: TaskStreams, e: Boolean, d: File,
-    fs: Seq[File], p: JSLint, outs: Seq[JSLintOutput]) = {
+    s: TaskStreams, e: Boolean, d: File, fs: Seq[File],
+    p: JSLint, outs: Seq[JSLintOutput], fo: JSLintOutput) = {
     s.log.info("Performing jslint in %s..." format d.toString())
     val rs = fs.map {
       f => p.lint(f.toString, new java.io.FileReader(f))
     }
     if (e) {
-      rs.foreach { res =>
-        res.getIssues.headOption.map(r => throw new RuntimeException(r.toString))
+      val allCount = (0 /: rs) { case (i, res) =>
+        val count = (0 /: res.getIssues) {
+          case (n, r) if n < 4 => s.log.error(r.toString); n + 1
+          case (n, _) => n + 1
+        }
+        if (count > 0 && count - 4 > 0)
+          s.log.error("%s: Found %d more..." format (res.getName, count - 4))
+        i + count
+      }
+
+      if (allCount > 0) {
+        fo(rs)
+        throw new RuntimeException("Found %d total" format allCount)
       }
     }
     outs.foreach(_.apply(rs))
@@ -201,12 +211,12 @@ object Plugin extends sbt.Plugin {
   private val jslintInputTask = (parsed: TaskKey[Seq[String]]) => {
     (parsed, streams, explode in jslint, sourceDirectory in jslint,
      unmanagedSources in jslint, initialize in jslint,
-     outputs in jslint) map {
-      (opts, s, e, dir, sources, lint, outs) =>
+     outputs in jslint, jslintFileOutput in jslint) map {
+      (opts, s, e, dir, sources, lint, outs, fo) =>
 
         opts.map(tryOption).foreach(_.map(lint.addOption))
 
-        performLint(s, e, dir, sources, lint, outs)
+        performLint(s, e, dir, sources, lint, outs, fo)
     }
   }
 
