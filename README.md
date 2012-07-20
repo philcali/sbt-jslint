@@ -1,6 +1,6 @@
 # SBT JSLint Plugin
 
-This sbt plugin simply wraps [jslint4java][1] with is a Java implementation
+This sbt plugin simply wraps [jslint4java][1] which is a Java implementation
 of [jslint][2].
 
 You can format the jslint issues anyway you want.

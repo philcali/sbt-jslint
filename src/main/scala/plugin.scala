@@ -223,7 +223,7 @@ object Plugin extends sbt.Plugin {
   def lintSettingsFor(con: Configuration): Seq[Setting[_]] =
     inConfig(con)(lintSettings0 ++ Seq(
       sourceDirectory in jslint <<= (sourceDirectory in con)(_ / "js"),
-      watchSources in jslint <<= (unmanagedSources in jslint),
+      watchSources in Global <++= (unmanagedSources in jslint),
       // Outputs for configuration
       outputs in jslint <++= (jslintConsoleOutput, jslintFileOutput) map (Seq(_, _))
     ))
