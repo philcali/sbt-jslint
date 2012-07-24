@@ -125,13 +125,17 @@ val settings: Seq[Setting[_]] = lintSettings ++ lintSettingsFor(Test) ++ Seq(
 
 ## Build errors
 
-The plugin has an setting to cause build errors if a javascript file does not
+The plugin has a setting to cause build errors if a javascript file does not
 conform to desired standards (integration testing). The setting is aptly named
 `explode` as it does just that, giving a line number, column number, and reason.
 
 ```
 LintKeys.explode in (Compile, jslint) := true
 ```
+
+__Note__: If there is a file output defined, the file will be written,
+regardless of the display in the terminal. This is necessary for external
+applications who read these logs.
 
 ## Multiple Outputs
 
