@@ -5,13 +5,13 @@ of [jslint][2].
 
 You can format the jslint issues anyway you want.
 
-__Note__: will only be published for sbt version >= 0.11.2.
+__Note__: will only be published for sbt version >= 0.11.3.
 
 ## Installation
 
 In your `project/plugins.sbt`, simply add the following line:
 
-`addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.1")`
+`addSbtPlugin("com.github.philcali" % "sbt-jslint" % "0.1.2")`
 
 Then, include in your build:
 

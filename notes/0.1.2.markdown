@@ -1,0 +1,18 @@
+- Fixed format for Jenkins integration [#4][4] ([jzsfkzm][2])
+- Fixed the `ShortFormatter` to respect new format
+- Fixed explode to display short summary and write to file
+- `watch` will now work with specified js sources
+
+### Backward compatibility notes
+
+- `ShortFormatter` expects to be instantiated with a source directory.
+  Something like this will suffice:
+
+        import LintKeys.{
+          jslint, formatter,
+          jslintConsoleOutput => consoleOut
+        }
+
+        formatter in (Compile, consoleOut) <<= (sourceDirectory in jslint) (ShortFormatter)
+
+[4]: https://github.com/philcali/sbt-jslint/pull/4
