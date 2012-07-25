@@ -15,4 +15,5 @@
 
         formatter in (Compile, consoleOut) <<= (sourceDirectory in jslint) (ShortFormatter)
 
+[2]: https://github.com/jzsfkzm
 [4]: https://github.com/philcali/sbt-jslint/pull/4
