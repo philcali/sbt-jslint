@@ -30,6 +30,7 @@ jslint-file-output # Outputs jslint results to a file
 jslint-indent(for jslint) # Spaces
 jslint-max-errors(for jslint) # Issue threshold
 jslint-max-length(for jslint) # Column width for javascript file
+jslint-predefs(for jslint) # List of predefined javascript globals
 jslint-flags(for jslint) # All the other flags for jslint
 jslint-initialize(for jslint) # Builds the JSLint processor
 jslint-formatter(for jslint-console-output) # Format the results in sbt
@@ -49,6 +50,7 @@ as default on [jslint][2]:
 - `LintKeys.maxErrors in LintKeys.jslint := 50`
 - `LintKeys.maxLength in LintKeys.jslint := None`
 - `LintKeys.flags in LintKeys.jslint := Nil`
+- `LintKeys.predefs in LintKeys.jslint := Nil`
 - `LintKeys.explode in LintKeys.jslint := false`
 
 Because there are so many lint flags, simply add the lint flag keys to

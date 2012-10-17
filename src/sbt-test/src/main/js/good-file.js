@@ -3,6 +3,9 @@ var test = function () {
         y = 0;
 
     x = x + y + 100;
+    predefinedGlobal1();
 };
 
 test();
+
+predefinedGlobal2();

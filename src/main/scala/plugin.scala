@@ -62,6 +62,9 @@ object Plugin extends sbt.Plugin {
     lazy val flags = SettingKey[Seq[String]](
       "jslint-flags", "Sequence of optional flags for runtime")
 
+    lazy val predefs = SettingKey[Seq[String]](
+      "jslint-predefs", "Sequence of optional flags for runtime")
+
     lazy val formatter = SettingKey[ResultFormatter](
       "jslint-formatter", "Formats the lint results"
     )
@@ -105,8 +108,8 @@ object Plugin extends sbt.Plugin {
 
   private def jslintInitialize =
     (indent in jslint, maxErrors in jslint,
-     maxLength in jslint, flags in jslint) map {
-      (i, m, l, f) =>
+     maxLength in jslint, flags in jslint, predefs in jslint) map {
+      (i, m, l, f, p) =>
         val builder = new JSLintBuilder()
         val jsl = builder.fromDefault()
 
@@ -115,6 +118,7 @@ object Plugin extends sbt.Plugin {
         l.map(l => jsl.addOption(MAXLEN, l.toString))
 
         f.map(tryOption).foreach(_.map(jsl.addOption))
+        jsl.addOption(PREDEF, p.mkString(","))
 
         jsl
     }
@@ -235,6 +239,7 @@ object Plugin extends sbt.Plugin {
     maxErrors in jslint := 50,
     maxLength in jslint := None,
     flags in jslint := Nil,
+    predefs in jslint := Nil,
     explode in jslint := false,
     includeFilter in jslint := "*.js",
     excludeFilter in jslint <<= excludeFilter in Global,

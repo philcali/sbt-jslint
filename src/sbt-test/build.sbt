@@ -6,6 +6,8 @@ seq(lintSettings: _*)
 
 flags in (Compile, jslint) += "sloppy"
 
+predefs in (Compile, jslint) := Seq("predefinedGlobal1", "predefinedGlobal2")
+
 formatter in (Compile, jslintConsoleOutput) <<=
   (sourceDirectory in (Compile, jslint)) (ShortFormatter)
 
