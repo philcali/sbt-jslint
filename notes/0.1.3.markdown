@@ -1,0 +1,5 @@
+- Added a setting for predefined lint options
+
+```
+jslint-predefs(for jslint) # List of predefined javascript globals
+```
