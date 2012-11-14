@@ -1,4 +1,4 @@
-- Added a setting for predefined lint options
+- Added a setting for predefined lint options ([ms-tg](https://github.com/ms-tg))
 
 ```
 jslint-predefs(for jslint) # List of predefined javascript globals
