@@ -203,7 +203,7 @@ object Plugin extends sbt.Plugin {
 
   private def jslintSources =
     (sourceDirectory in jslint, includeFilter in jslint, excludeFilter in jslint) map {
-      (dir, include, exclude) => dir.descendentsExcept(include, exclude).get
+      (dir, include, exclude) => dir.descendantsExcept(include, exclude).get
     }
 
   private val flagParser = (state: State) => {
